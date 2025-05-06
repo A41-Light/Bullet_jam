@@ -1,4 +1,6 @@
 
+using System;
+using System.Diagnostics;
 using System.Numerics;
 using System.Security.Cryptography.X509Certificates;
 using UnityEngine;
@@ -68,21 +70,23 @@ public class Player : MonoBehaviour
 
     void FixedUpdate()
     {
+
+        Dash();
         Move();
     }
 
     void ProcessInput()
     {
 
-        float moveX = Input.GetAxis("Horizontal") * speed;
-        float moveY = Input.GetAxis("Vertical") * speed;
-        moveInput = new Vector2(moveX, moveY);
+        moveInput.x = Input.GetAxis("Horizontal");
+        moveInput.y = Input.GetAxis("Vertical");
+        
 
     }
 
     void Move()
     {
-        rb.linearVelocity = moveInput;
+        rb.MovePosition(rb.position + moveInput * speed * Time.fixedDeltaTime);
         Vector3 pos = transform.position;
         pos.x = Mathf.Clamp(pos.x, screenLeft, screenRight);
         pos.y = Mathf.Clamp(pos.y, screenBottom, screenTop);
@@ -107,5 +111,14 @@ public class Player : MonoBehaviour
         screenRight  = topRight.x;
         screenTop    = topRight.y;
         screenBottom = bottomLeft.y;
+    }
+
+    void Dash()
+    {
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            moveInput = transform.up * speed * 2f;
+            //rb.linearVelocity = transform.right * speed * 2f; // Dash in the direction the player is facing
+        }
     }
 }
