@@ -26,7 +26,6 @@ public class Player : MonoBehaviour
     public Light2D light2D; // Reference to the Light2D component
     public float shootTimer = 0.05f; // Time between shots
     public float currentShootTimer = 0f; // Timer to track shooting cooldown
-    public float offset = 0.5f; // Offset for bullet spawn position
 
     private Rigidbody2D rb;
     private Vector2 moveInput;
@@ -80,7 +79,6 @@ public class Player : MonoBehaviour
 
         moveInput.x = Input.GetAxis("Horizontal");
         moveInput.y = Input.GetAxis("Vertical");
-        
 
     }
 
