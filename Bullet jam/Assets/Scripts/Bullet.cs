@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 public class Bullet : MonoBehaviour
 {
@@ -23,6 +24,7 @@ public class Bullet : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        StartCoroutine(Glitch()); // Start the glitch effect coroutine
         GetBounds(); // Get the screen bounds
         if(CheckBounds())
         {
@@ -66,5 +68,21 @@ public class Bullet : MonoBehaviour
             transform.position.y < screenBottom || transform.position.y > screenTop)
             return true;
         return false;
+    }
+
+    IEnumerator Glitch()
+    {
+        // Glitch effect on the bullet
+        if(Random.Range(0,1) < 0.1f)
+        {
+        GetComponent<SpriteRenderer>().enabled = false; // Change color to red
+        GetComponent<Collider2D>().enabled = false; // Disable the collider
+        Debug.Log("Glitch effect activated!"); // Log the glitch effect
+        yield return new WaitForSeconds(0.1f); // Wait for 0.1 seconds
+        GetComponent<SpriteRenderer>().enabled = true; // Change color back to normal
+        GetComponent<Collider2D>().enabled = true; // Enable the collider
+        Debug.Log("Glitch effect deactivated!"); // Log the end of the glitch effect
+        }
+        
     }
 }

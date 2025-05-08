@@ -374,4 +374,4 @@ MonoBehaviour:
   bulletPrefab: {fileID: 1017414397175704957, guid: 9de090e63d8c17b4eb48745cef150e6c, type: 3}
   Turret1: {fileID: 1921922093659564048}
   Turret2: {fileID: 2292232753266176902}
-  shootTimer: 0.09
+  shootTimer: 0.1

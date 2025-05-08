@@ -1,4 +1,9 @@
+using System.Numerics;
+using Unity.VisualScripting;
 using UnityEngine;
+using Quaternion = UnityEngine.Quaternion;
+using Vector2 = UnityEngine.Vector2;
+using Vector3 = UnityEngine.Vector3;
 
 public class Enemy : MonoBehaviour
 {
@@ -15,15 +20,21 @@ public class Enemy : MonoBehaviour
     private float dashTimerCounter = 0f; // Timer to track dash cooldown
     private Rigidbody2D rb; // Reference to the Rigidbody2D component
     private GameObject player; // Reference to the player GameObject
+    private Collider2D enemyCollider; // Reference to the player's collider
     private float angle; // Angle of rotation for the enemy
     private float currentShootTimer = 0f; // Timer to track shooting cooldown
+    private float minDistance = 5f;
+    private float screenLeft, screenRight, screenTop, screenBottom; // Screen bounds
+    private Vector3 bottomLeft, topRight; // Screen bounds in world coordinates
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
+        minDistance = Random.Range(minDistance - 2f, minDistance + 2f); // Randomize the minimum distance from the player
         speed = Random.Range(2.5f, 3.5f); // Randomize the speed of the enemy between 1 and 5
         rb = GetComponent<Rigidbody2D>(); // Get the Rigidbody2D component attached to this GameObject
         player = GameObject.FindGameObjectWithTag("Player"); // Find the player GameObject by its tag
+        enemyCollider = GetComponent<Collider2D>(); // Get the Collider2D component attached to this GameObject
         if (player == null)
         {
             Debug.LogError("Player not found! Make sure the player has the 'Player' tag.");
@@ -33,20 +44,25 @@ public class Enemy : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        GetBounds(); // Get the screen bounds in world coordinates
+
         ManageDashCounter(); // Manage the dash and shoot timers
 
         FacePlayer();
         Move();
         Shoot();
 
-        if (dashTimerCounter == 0f  && Random.Range(0,1) < 0.0001) // Check if the enemy is close to the player
+        if (dashTimerCounter == 0f  && Random.Range(0,1) < 0.0001 && Vector3.Distance(player.transform.position , transform.position) != minDistance) // Check if the enemy is close to the player
         {
             Dash(); // Call the Dash method if the enemy is close to the player
             dashTimerCounter = dashTimer; // Reset the dash timer
         }
 
         if(is_dashingCounter == 0f)
+        {
+            enemyCollider.enabled = true; // Enable the enemy collider after the dash is over
             currentSpeed = speed; // Reset the current speed to normal speed
+        }
 
         if(currentShootTimer > 0f)
         {
@@ -70,8 +86,26 @@ public class Enemy : MonoBehaviour
     {
         if (player != null)
         {
-            Vector3 direction = player.transform.position - transform.position; // Calculate the direction to the player
-            rb.linearVelocity = direction.normalized * currentSpeed; // Move the enemy towards the player
+            float distance = Vector3.Distance(player.transform.position, transform.position); // Calculate the distance to the player
+            if(distance > minDistance + 0.2) // Check if the enemy is close to the player
+            {
+                Vector3 direction = player.transform.position - transform.position; // Calculate the direction to the player
+                rb.linearVelocity = direction.normalized * currentSpeed; // Move the enemy towards the player
+            }
+            else if(distance < minDistance - 0.2) // Check if the enemy is close to the player
+            {
+                Vector3 direction = player.transform.position - transform.position; // Calculate the direction to the player
+                rb.linearVelocity = -direction.normalized * currentSpeed; // Move the enemy away from the player
+            }
+            else
+            {
+                Orbit(); // Call the Orbit method if the enemy is at the right distance from the player
+            }
+
+            Vector3 pos = transform.position;
+            pos.x = Mathf.Clamp(pos.x, screenLeft, screenRight);
+            pos.y = Mathf.Clamp(pos.y, screenBottom, screenTop);
+            transform.position = pos;
         }
     }
 
@@ -80,6 +114,7 @@ public class Enemy : MonoBehaviour
         if (player != null)
         {
             currentSpeed = speed * 4f; // Set the current speed to double the normal speed
+            enemyCollider.enabled = false; // Disable the enemy collider to avoid collisions during the dash
             is_dashingCounter = dash_duration; // Set the dash duration
         }
     }
@@ -112,6 +147,30 @@ public class Enemy : MonoBehaviour
         if(is_dashingCounter < 0f)
         {
             is_dashingCounter = 0f; // Reset the dash timer
+        }
+    }
+
+    void GetBounds()
+    {
+        bottomLeft = Camera.main.ViewportToWorldPoint(new Vector3(0, 0, 0));
+        topRight   = Camera.main.ViewportToWorldPoint(new Vector3(1, 1, 0));
+        screenLeft   = bottomLeft.x;
+        screenRight  = topRight.x;
+        screenTop    = topRight.y;
+        screenBottom = bottomLeft.y;
+    }
+
+    void Orbit()
+    {
+        Vector2 directionToPlayer = player.transform.position - transform.position; // Calculate the direction to the player
+        if (player != null)
+        {
+            Vector2 tangentDirection = Vector2.Perpendicular(directionToPlayer).normalized;
+            rb.linearVelocity= tangentDirection * currentSpeed;
+
+            // Optional: Face the player while orbiting
+            float angle = Mathf.Atan2(directionToPlayer.y, directionToPlayer.x) * Mathf.Rad2Deg;
+            rb.rotation = angle;
         }
     }
 }
