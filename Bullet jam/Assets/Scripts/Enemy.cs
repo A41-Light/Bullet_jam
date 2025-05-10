@@ -1,9 +1,13 @@
+using System;
 using System.Numerics;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 using Quaternion = UnityEngine.Quaternion;
+using Random = UnityEngine.Random;
 using Vector2 = UnityEngine.Vector2;
 using Vector3 = UnityEngine.Vector3;
+using System.Collections;
 
 public class Enemy : MonoBehaviour
 {
@@ -13,6 +17,10 @@ public class Enemy : MonoBehaviour
     public GameObject Turret1; // Reference to the first turret GameObject
     public GameObject Turret2; // Reference to the second turret GameObject
     public float shootTimer = 0.05f; // Time between shots
+    public float health = 5f;
+    public Light2D light2D; // Reference to the Light2D component
+    public SpriteRenderer sr;
+    
 
     private float currentSpeed = 0f; // Current speed of the enemy
     private float dash_duration = 0.25f; // Duration of the dash in seconds
@@ -26,10 +34,13 @@ public class Enemy : MonoBehaviour
     private float minDistance = 5f;
     private float screenLeft, screenRight, screenTop, screenBottom; // Screen bounds
     private Vector3 bottomLeft, topRight; // Screen bounds in world coordinates
+    private bool is_orbiting = false;
+    private Color originalColor; // Original color of the enemy sprite
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
+        originalColor = sr.color; // Store the original color of the enemy sprite
         minDistance = Random.Range(minDistance - 2f, minDistance + 2f); // Randomize the minimum distance from the player
         speed = Random.Range(2.5f, 3.5f); // Randomize the speed of the enemy between 1 and 5
         rb = GetComponent<Rigidbody2D>(); // Get the Rigidbody2D component attached to this GameObject
@@ -52,7 +63,7 @@ public class Enemy : MonoBehaviour
         Move();
         Shoot();
 
-        if (dashTimerCounter == 0f  && Random.Range(0,1) < 0.0001 && Vector3.Distance(player.transform.position , transform.position) != minDistance) // Check if the enemy is close to the player
+        if (dashTimerCounter == 0f  && Random.Range(0,1) < 0.0001 && !is_orbiting) // Check if the enemy is close to the player
         {
             Dash(); // Call the Dash method if the enemy is close to the player
             dashTimerCounter = dashTimer; // Reset the dash timer
@@ -89,11 +100,13 @@ public class Enemy : MonoBehaviour
             float distance = Vector3.Distance(player.transform.position, transform.position); // Calculate the distance to the player
             if(distance > minDistance + 0.2) // Check if the enemy is close to the player
             {
+                is_orbiting = false; // Set the orbiting flag to false
                 Vector3 direction = player.transform.position - transform.position; // Calculate the direction to the player
                 rb.linearVelocity = direction.normalized * currentSpeed; // Move the enemy towards the player
             }
             else if(distance < minDistance - 0.2) // Check if the enemy is close to the player
             {
+                is_orbiting = false; // Set the orbiting flag to false
                 Vector3 direction = player.transform.position - transform.position; // Calculate the direction to the player
                 rb.linearVelocity = -direction.normalized * currentSpeed; // Move the enemy away from the player
             }
@@ -103,9 +116,13 @@ public class Enemy : MonoBehaviour
             }
 
             Vector3 pos = transform.position;
-            pos.x = Mathf.Clamp(pos.x, screenLeft, screenRight);
-            pos.y = Mathf.Clamp(pos.y, screenBottom, screenTop);
-            transform.position = pos;
+
+            if(!is_orbiting)
+            {
+                pos.x = Mathf.Clamp(pos.x, screenLeft, screenRight);
+                pos.y = Mathf.Clamp(pos.y, screenBottom, screenTop);
+                transform.position = pos;
+            }
         }
     }
 
@@ -165,12 +182,24 @@ public class Enemy : MonoBehaviour
         Vector2 directionToPlayer = player.transform.position - transform.position; // Calculate the direction to the player
         if (player != null)
         {
+            is_orbiting = true; // Set the orbiting flag to true
             Vector2 tangentDirection = Vector2.Perpendicular(directionToPlayer).normalized;
             rb.linearVelocity= tangentDirection * currentSpeed;
-
-            // Optional: Face the player while orbiting
-            float angle = Mathf.Atan2(directionToPlayer.y, directionToPlayer.x) * Mathf.Rad2Deg;
-            rb.rotation = angle;
         }
+    }
+
+    public void Hurt(float damage)
+    {
+        health -= damage; // Decrease the enemy's health by the damage amount
+        if (health <= 0f)
+        {
+            Die(); // Call the Die method
+        }
+    }
+
+    void Die()
+    {
+        Camera_Controller.instance.TriggerShake(0.2f, 0.1f); // Trigger the camera shake effect
+        Destroy(gameObject); // Destroy the enemy GameObject
     }
 }

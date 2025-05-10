@@ -39,7 +39,6 @@ public class Player : MonoBehaviour
 
     void Update()
     {
-        Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Confined;
         GetBounds();
 

@@ -285,7 +285,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 1}
-  m_LocalScale: {x: 2.6, y: 2.6, z: 2.6}
+  m_LocalScale: {x: 2.3, y: 2.3, z: 2.3}
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 468392484402903786}
@@ -375,3 +375,6 @@ MonoBehaviour:
   Turret1: {fileID: 1921922093659564048}
   Turret2: {fileID: 2292232753266176902}
   shootTimer: 0.1
+  health: 5
+  light2D: {fileID: 3419804268896550450}
+  sr: {fileID: 2376725889623339519}
