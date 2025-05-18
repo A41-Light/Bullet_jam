@@ -19,31 +19,36 @@ public class Enemy : MonoBehaviour
     public float shootTimer = 0.05f; // Time between shots
     public float health = 5f;
     public Light2D light2D; // Reference to the Light2D component
-    public SpriteRenderer sr;
     
 
     private float currentSpeed = 0f; // Current speed of the enemy
     private float dash_duration = 0.25f; // Duration of the dash in seconds
     private float is_dashingCounter = 0f; // Counter to track dash duration
     private float dashTimerCounter = 0f; // Timer to track dash cooldown
+    private float is_hurt_timer = 0f; // Timer to track hurt duration
+    private float is_hurt_duration = 0.05f; // Duration of the hurt effect in seconds
     private Rigidbody2D rb; // Reference to the Rigidbody2D component
     private GameObject player; // Reference to the player GameObject
     private Collider2D enemyCollider; // Reference to the player's collider
+    private AudioSource audioSource; // Reference to the AudioSource component
     private float angle; // Angle of rotation for the enemy
     private float currentShootTimer = 0f; // Timer to track shooting cooldown
     private float minDistance = 5f;
     private float screenLeft, screenRight, screenTop, screenBottom; // Screen bounds
     private Vector3 bottomLeft, topRight; // Screen bounds in world coordinates
     private bool is_orbiting = false;
-    private Color originalColor; // Original color of the enemy sprite
+    private Animator animator; // Reference to the Animator component
+    private float intensity;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        originalColor = sr.color; // Store the original color of the enemy sprite
+        animator = GetComponentInChildren<Animator>(); // Get the Animator component attached to the child GameObject
+        audioSource = GetComponent<AudioSource>(); // Get the AudioSource component attached to this GameObject
         minDistance = Random.Range(minDistance - 2f, minDistance + 2f); // Randomize the minimum distance from the player
         speed = Random.Range(2.5f, 3.5f); // Randomize the speed of the enemy between 1 and 5
         rb = GetComponent<Rigidbody2D>(); // Get the Rigidbody2D component attached to this GameObject
+        intensity = light2D.intensity; // Get the initial intensity of the light
         player = GameObject.FindGameObjectWithTag("Player"); // Find the player GameObject by its tag
         enemyCollider = GetComponent<Collider2D>(); // Get the Collider2D component attached to this GameObject
         if (player == null)
@@ -78,6 +83,17 @@ public class Enemy : MonoBehaviour
         if(currentShootTimer > 0f)
         {
             currentShootTimer -= Time.deltaTime; // Decrease the shoot timer
+        }
+
+        if(is_hurt_timer < is_hurt_duration)
+        {
+            is_hurt_timer += Time.deltaTime; // Decrease the hurt timer
+        }
+        else
+        {
+            animator.SetBool("is_hurt", false); // Reset the hurt animation
+            enemyCollider.enabled = true; // Enable the enemy collider after the hurt state is over
+            light2D.intensity = intensity; // Reset the light intensity
         }
 
     }
@@ -191,6 +207,11 @@ public class Enemy : MonoBehaviour
     public void Hurt(float damage)
     {
         health -= damage; // Decrease the enemy's health by the damage amount
+        is_hurt_timer = 0f; // Reset the hurt timer
+        animator.SetBool("is_hurt", true); // Set the hurt animation
+        audioSource.Play(); // Play the hurt sound effect
+        enemyCollider.enabled = false; // Disable the enemy collider to avoid collisions during the hurt state
+        light2D.intensity = 0f;
         if (health <= 0f)
         {
             Die(); // Call the Die method
